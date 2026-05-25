@@ -507,6 +507,7 @@
     const booksEl = document.querySelector("#books");
     const noiseEl = document.querySelector("#noise");
     const roomEl = document.querySelector("#room");
+    const interactButton = document.querySelector('[data-key="Space"]');
 
     // Generate QR code for mobile connection
     function initializeQRCode() {
@@ -687,6 +688,7 @@
       state.teacher = { x: 29.2, y: 8.5, angle: Math.PI, speed: 1.25, patrolIndex: 0 };
       overlay.classList.add("is-hidden");
       quiz.classList.add("is-hidden");
+      setInteractVisible(false);
       canvas.focus();
       tick(state.lastTime);
     }
@@ -829,6 +831,7 @@
           break;
         }
       }
+      setInteractVisible(Boolean(state.nearbyBook || state.nearbyClassmate));
     }
 
     function checkClassmates() {
@@ -839,6 +842,7 @@
           break;
         }
       }
+      setInteractVisible(Boolean(state.nearbyBook || state.nearbyClassmate));
     }
 
     function checkEndings() {
@@ -974,7 +978,13 @@
       answer.value = "";
       quizNotice.textContent = "";
       quiz.classList.add("is-hidden");
+      setInteractVisible(Boolean(state.nearbyBook || state.nearbyClassmate));
       state.lastTime = performance.now();
+    }
+
+    function setInteractVisible(visible) {
+      if (!interactButton) return;
+      interactButton.style.display = visible ? 'block' : 'none';
     }
 
     function lose() {
