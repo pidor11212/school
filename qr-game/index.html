@@ -1,0 +1,1430 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>School Escape 3D</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f8f1dc;
+      --muted: #b7ad95;
+      --panel: rgba(13, 15, 17, 0.86);
+      --line: rgba(255, 255, 255, 0.16);
+      --yellow: #ffd35c;
+      --green: #76e36a;
+      --red: #ff5b5b;
+      --blue: #68c7ff;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #111315;
+      color: var(--ink);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .app {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 4px;
+      padding: 6px;
+      background: #050505;
+    }
+
+    .hud {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255, 211, 92, 0.95);
+      color: #181100;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      font-size: 16px;
+      font-weight: 850;
+      letter-spacing: 0.5px;
+    }
+
+    .logo {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      border: none;
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .stat {
+      min-width: 86px;
+      padding: 5px 8px;
+      border: none;
+      border-radius: 4px;
+      background: rgba(255, 244, 189, 0.7);
+      text-align: center;
+    }
+
+    .label {
+      display: block;
+      color: #5c4717;
+      font-size: 11px;
+      line-height: 1.1;
+    }
+
+    .value {
+      display: block;
+      margin-top: 2px;
+      font-size: 17px;
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .stage {
+      position: relative;
+      width: min(1180px, 100%);
+      min-height: 0;
+      margin: 0 auto;
+      border: none;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0b0d0f;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .overlay,
+    .quiz {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background: rgba(9, 10, 12, 0.72);
+      transition: opacity 160ms ease;
+    }
+
+    .overlay.is-hidden,
+    .quiz.is-hidden {
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .card,
+    .quiz-card {
+      width: min(500px, 100%);
+      max-height: 80vh;
+      padding: 22px;
+      border: none;
+      border-radius: 12px;
+      background: rgba(238, 218, 116, 0.97);
+      color: #171000;
+      text-align: center;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(38px, 8vw, 78px);
+      line-height: 0.9;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 13px auto 18px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .primary,
+    .secondary {
+      min-width: 136px;
+      min-height: 44px;
+      border-radius: 6px;
+      padding: 0 16px;
+      font-weight: 850;
+      transition: all 0.2s ease;
+    }
+
+    .primary {
+      background: var(--yellow);
+      color: #17130b;
+      border: none;
+    }
+
+    .primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .secondary {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .secondary:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .question {
+      margin: 0 0 14px;
+      color: var(--ink);
+      font-size: clamp(24px, 6vw, 44px);
+      font-weight: 850;
+    }
+
+    .answer-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .answer-row input {
+      width: 100%;
+      min-height: 46px;
+      border: 1px solid #555;
+      border-radius: 6px;
+      padding: 0 12px;
+      background: #1b1b1b;
+      color: var(--ink);
+      font-size: 20px;
+      text-align: center;
+      outline: 0;
+      transition: border-color 0.2s;
+    }
+
+    .answer-row input:focus {
+      border-color: #ffd35c;
+    }
+
+    .question-item {
+      transition: all 0.2s ease !important;
+    }
+
+    .question-item:hover {
+      background: rgba(0, 0, 0, 0.25) !important;
+      transform: translateX(4px);
+    }
+
+    .notice {
+      min-height: 22px;
+      margin-top: 12px;
+      color: transparent;
+      font-size: 14px;
+    }
+
+    .controls {
+      position: absolute;
+      inset: auto 12px 12px 12px;
+      display: none;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 48px);
+      grid-template-rows: repeat(3, 48px);
+      gap: 6px;
+      pointer-events: auto;
+      opacity: 0.86;
+    }
+
+    .look {
+      display: grid;
+      grid-template-columns: repeat(2, 54px);
+      align-content: end;
+      gap: 6px;
+      pointer-events: auto;
+      opacity: 0.86;
+    }
+
+    .pad button,
+    .look button {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.55);
+      font-size: 20px;
+      font-weight: 850;
+      transition: all 0.15s ease;
+    }
+
+    .action-btn {
+      display: grid;
+      align-items: center;
+      margin-left: 12px;
+    }
+
+    .action-btn button {
+      min-width: 56px;
+      min-height: 56px;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: 900;
+      background: var(--yellow);
+      color: #17130b;
+      border: none;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
+
+    .pad button:active,
+    .look button:active {
+      background: rgba(0, 0, 0, 0.75);
+      transform: scale(0.95);
+    }
+
+    .pad button[data-key="KeyW"] {
+      grid-column: 2;
+    }
+
+    .pad button[data-key="KeyA"] {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    .pad button[data-key="KeyS"] {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    .pad button[data-key="KeyD"] {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    .qr-section {
+      text-align: center;
+      margin: 16px 0;
+    }
+
+    .qr-section h3 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: #5c4717;
+      font-weight: 600;
+    }
+
+    #qrCode {
+      display: inline-block;
+      padding: 8px;
+      background: white;
+      border-radius: 6px;
+    }
+
+    .qr-info {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #5c4717;
+      font-weight: 500;
+    }
+
+    @media (max-width: 800px) {
+      .app {
+        padding: 8px;
+      }
+
+      .hud {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .stat {
+        min-width: 0;
+      }
+
+      .controls {
+        display: flex !important;
+      }
+
+      .qr-section {
+        display: none;
+      }
+    }
+
+    .pad button,
+    .look button {
+      font-size: 24px;
+      min-height: 52px;
+      min-width: 52px;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hud">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">3D</span>
+        <span>School Escape 3D</span>
+      </div>
+      <div class="stats">
+        <div class="stat">
+          <span class="label">Тетради</span>
+          <span class="value" id="books">0/6</span>
+        </div>
+        <div class="stat">
+          <span class="label">Злость</span>
+          <span class="value" id="noise">0%</span>
+        </div>
+        <div class="stat">
+          <span class="label">Кабинет</span>
+          <span class="value" id="room">Холл</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="stage" id="stage" aria-label="3D школа">
+      <canvas id="game" width="1100" height="660" tabindex="0"></canvas>
+
+      <div class="controls" aria-label="Управление на телефоне">
+        <div class="pad">
+          <button data-key="KeyW">^</button>
+          <button data-key="KeyA">&lt;</button>
+          <button data-key="KeyS">v</button>
+          <button data-key="KeyD">&gt;</button>
+        </div>
+      <div class="look">
+          <button data-key="ArrowLeft">⟲</button>
+          <button data-key="ArrowRight">⟳</button>
+          <button data-key="Space">E</button>
+        <div class="action-btn">
+          <!-- Label shows 'E' but button sends Space so it triggers interaction logic -->
+          <button data-key="Space" aria-label="Interact">E</button>
+        </div>
+        </div>
+      </div>
+
+      <div class="overlay" id="overlay">
+        <div class="card">
+          <h1>School Escape 3D</h1>
+          <p class="subtitle" id="message">Собери все тетради, ответь по английскому и выбрались из школы!</p>
+          <div class="qr-section">
+            <h3>📱 Подключи телефон</h3>
+            <div id="qrCode"></div>
+            <div class="qr-info">Отсканируй или введи адрес:<br><strong id="gameUrl">http://localhost:8080</strong></div>
+          </div>
+          <div class="actions">
+            <button class="primary" id="startButton">Начать</button>
+            <button class="secondary" id="muteButton">Звук: вкл</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="quiz is-hidden" id="quiz">
+        <form class="quiz-card" id="quizForm">
+          <h2 style="margin: 0 0 16px 0; font-size: 20px; color: #171000;">Задания</h2>
+          <div id="questionsList" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; text-align: left; max-height: 200px; overflow-y: auto;"></div>
+          <p class="question" id="question" style="display: none;">2 + 2 = ?</p>
+          <div class="answer-row" style="display: none;">
+            <input id="answer" inputmode="text" autocomplete="off" placeholder="English answer">
+            <button class="primary" type="submit">Проверить</button>
+          </div>
+          <div class="notice" id="quizNotice"></div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode.js/1.5.3/qrcode.min.js"></script>
+  <script>
+    const canvas = document.querySelector("#game");
+    const ctx = canvas.getContext("2d");
+    const stage = document.querySelector("#stage");
+    const overlay = document.querySelector("#overlay");
+    const quiz = document.querySelector("#quiz");
+    const quizForm = document.querySelector("#quizForm");
+    const questionsList = document.querySelector("#questionsList");
+    const answer = document.querySelector("#answer");
+    const question = document.querySelector("#question");
+    const quizNotice = document.querySelector("#quizNotice");
+    const startButton = document.querySelector("#startButton");
+    const muteButton = document.querySelector("#muteButton");
+    const message = document.querySelector("#message");
+    const booksEl = document.querySelector("#books");
+    const noiseEl = document.querySelector("#noise");
+    const roomEl = document.querySelector("#room");
+
+    // Generate QR code for mobile connection
+    function initializeQRCode() {
+      const protocol = window.location.protocol;
+      const hostname = window.location.hostname;
+      const port = window.location.port || (protocol === 'https:' ? 443 : 80);
+      const url = `${protocol}//${hostname}:${port}`;
+      
+      const gameUrlEl = document.querySelector("#gameUrl");
+      if (gameUrlEl) gameUrlEl.textContent = url;
+      
+      const qrContainer = document.querySelector("#qrCode");
+      if (qrContainer && typeof QRCode !== 'undefined') {
+        qrContainer.innerHTML = '';
+        new QRCode(qrContainer, {
+          text: url,
+          width: 180,
+          height: 180,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+      }
+    }
+
+    const tile = 64;
+    const fov = Math.PI / 3;
+    const maxDepth = 18;
+    const totalBooks = 3;
+    const textureFiles = {
+      wall: "assets/textures/стена.png",
+      floor: "assets/textures/пол.png",
+      classmate: "assets/textures/classmate.jpg",
+      assignment: "assets/textures/задание.png"
+    };
+    const textures = {};
+    const map = [
+      "################################",
+      "#..........#..........#........#",
+      "#..........#..........#........#",
+      "#..........#..........#........#",
+      "#..........#..........#........#",
+      "###D########D############D######",
+      "#..............................#",
+      "#..............................#",
+      "#..............................#",
+      "#S............................E#",
+      "#..............................#",
+      "################################"
+    ];
+
+    const rooms = [
+      { name: "Кабинет 1", x1: 1, y1: 1, x2: 10, y2: 5 },
+      { name: "Кабинет 2", x1: 11, y1: 1, x2: 20, y2: 5 },
+      { name: "Кабинет 3", x1: 21, y1: 1, x2: 30, y2: 5 },
+      { name: "Главный коридор", x1: 1, y1: 6, x2: 30, y2: 10 }
+    ];
+
+    const bookPositions = [
+      { x: 5.5, y: 3.0 },
+      { x: 15.5, y: 3.0 },
+      { x: 25.5, y: 3.0 }
+    ];
+
+    const patrolPoints = [
+      { x: 28.5, y: 8.0 },
+      { x: 15.5, y: 8.0 },
+      { x: 3.5, y: 8.0 }
+    ];
+
+    const classmates = [
+      { x: 5.5, y: 2.5, type: "classmate", size: 0.72 },
+      { x: 15.5, y: 2.5, type: "classmate", size: 0.72 },
+      { x: 25.5, y: 2.5, type: "classmate", size: 0.72 }
+    ];
+
+    const englishQuestions = [
+      { q: "Complete: 'If I were a bird, I _____ fly away'", answers: ["would", "would fly"] },
+      { q: "What is the past participle of 'eat'?", answers: ["eaten"] },
+      { q: "Fill in: 'She has been working here _____ five years'", answers: ["for"] },
+      { q: "Complete: 'Had I known, I _____ helped you'", answers: ["would have", "would have helped"] },
+      { q: "What does 'procrastinate' mean?", answers: ["delay", "postpone", "put off"] },
+      { q: "Choose: 'Regardless _____ what happens...'", answers: ["of"] },
+      { q: "Complete: 'She wishes she _____ in Paris'", answers: ["lived", "lived there"] },
+      { q: "What is the opposite of 'ephemeral'?", answers: ["permanent", "eternal", "lasting"] },
+      { q: "Fill in: 'The presentation was postponed _____ the weather'", answers: ["due to", "because of"] },
+      { q: "Complete: 'I would have come earlier if I _____ the time'", answers: ["had", "had had"] }
+    ];
+
+    const classmateSpeech = [
+      "sigeon pex",
+      "im reading epstein files",
+      "my cat learning 47 languages"
+    ];
+
+    const schoolProps = [
+      ...cabinet(2.2, 1.5), ...cabinet(12.2, 1.5), ...cabinet(22.2, 1.5),
+      { x: 7.8, y: 0.8, type: "board" },
+      { x: 17.8, y: 0.8, type: "board" },
+      { x: 27.8, y: 0.8, type: "board" },
+      { x: 14.2, y: 10.1, type: "shelf" },
+      { x: 17.8, y: 11.0, type: "shelf" },
+      { x: 3.4, y: 15.1, type: "bench" },
+      { x: 7.4, y: 16.0, type: "bench" },
+      { x: 14.4, y: 15.2, type: "table" },
+      { x: 17.2, y: 16.2, type: "table" },
+      { x: 24.0, y: 15.2, type: "desk" },
+      { x: 26.0, y: 15.2, type: "chair" },
+      { x: 11.5, y: 2.4, type: "locker" },
+      { x: 11.5, y: 3.5, type: "locker" },
+      { x: 11.5, y: 6.8, type: "locker" },
+      { x: 12.8, y: 6.8, type: "locker" },
+      { x: 18.5, y: 6.8, type: "locker" },
+      { x: 20.0, y: 6.8, type: "locker" },
+      { x: 11.5, y: 20.5, type: "locker" },
+      { x: 13.0, y: 20.5, type: "locker" },
+      { x: 18.0, y: 20.5, type: "locker" },
+      { x: 20.0, y: 20.5, type: "locker" }
+    ];
+
+    function cabinet(startX, startY) {
+      const props = [];
+      for (let row = 0; row < 2; row += 1) {
+        for (let col = 0; col < 3; col += 1) {
+          props.push({ x: startX + col * 1.45, y: startY + row * 1.35, type: "desk" });
+          props.push({ x: startX + col * 1.45, y: startY + row * 1.35 + 0.48, type: "chair" });
+        }
+      }
+      return props;
+    }
+
+    const keys = new Set();
+    const state = {
+      running: false,
+      pausedForQuiz: false,
+      muted: false,
+      lastTime: 0,
+      noise: 0,
+      currentAnswers: [],
+      activeBook: null,
+      books: [],
+      activeClassmate: null,
+      classmates: [],
+      nearbyBook: null,
+      nearbyClassmate: null,
+      player: { x: 2.5, y: 9.5, angle: -Math.PI / 2, speed: 2.55, turn: 2.35 },
+      teacher: { x: 29.2, y: 8.5, angle: Math.PI, speed: 1.18, patrolIndex: 0 },
+      zBuffer: []
+    };
+
+    function loadTextures() {
+      for (const [name, src] of Object.entries(textureFiles)) {
+        const image = new Image();
+        image.onload = () => {
+          textures[name] = image;
+          draw();
+        };
+        image.onerror = () => {
+          textures[name] = null;
+        };
+        image.src = src;
+      }
+    }
+
+    function resetGame() {
+      state.running = true;
+      state.pausedForQuiz = false;
+      state.noise = 0;
+      state.lastTime = performance.now();
+      state.currentAnswers = [];
+      state.activeBook = null;
+      state.activeClassmate = null;
+      state.nearbyBook = null;
+      state.nearbyClassmate = null;
+      state.books = bookPositions.map((book, id) => ({ ...book, id, solved: false }));
+      state.classmates = classmates.map((cm, id) => ({ ...cm, id, talked: false }));
+      state.player = { x: 2.5, y: 9.5, angle: -Math.PI / 2, speed: 3.05, turn: 2.75 };
+      state.teacher = { x: 29.2, y: 8.5, angle: Math.PI, speed: 1.25, patrolIndex: 0 };
+      overlay.classList.add("is-hidden");
+      quiz.classList.add("is-hidden");
+      canvas.focus();
+      tick(state.lastTime);
+    }
+
+    function resize() {
+      const rect = stage.getBoundingClientRect();
+      const pixelScale = 0.42;
+      canvas.width = Math.max(360, Math.floor(rect.width * pixelScale));
+      canvas.height = Math.max(220, Math.floor(rect.height * pixelScale));
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      draw();
+    }
+
+    function viewWidth() {
+      return canvas.width;
+    }
+
+    function viewHeight() {
+      return canvas.height;
+    }
+
+    function tick(now) {
+      if (!state.running) return;
+      const dt = Math.min(0.033, (now - state.lastTime) / 1000);
+      state.lastTime = now;
+      if (!state.pausedForQuiz) update(dt);
+      draw();
+      requestAnimationFrame(tick);
+    }
+
+    function update(dt) {
+      let forward = 0;
+      let strafe = 0;
+      if (keys.has("KeyW") || keys.has("ArrowUp")) forward += 1;
+      if (keys.has("KeyS") || keys.has("ArrowDown")) forward -= 1;
+      if (keys.has("KeyA")) strafe -= 1;
+      if (keys.has("KeyD")) strafe += 1;
+      if (keys.has("ArrowLeft") || keys.has("KeyQ")) state.player.angle -= state.player.turn * dt;
+      if (keys.has("ArrowRight") || keys.has("KeyE")) state.player.angle += state.player.turn * dt;
+
+      if (forward || strafe) {
+        const len = Math.hypot(forward, strafe);
+        const moveSpeed = state.player.speed * dt;
+        const dx = (Math.cos(state.player.angle) * forward + Math.cos(state.player.angle + Math.PI / 2) * strafe) / len;
+        const dy = (Math.sin(state.player.angle) * forward + Math.sin(state.player.angle + Math.PI / 2) * strafe) / len;
+        movePlayer(dx * moveSpeed, dy * moveSpeed);
+      }
+
+      // Handle Space interaction
+      if (keys.has("Space") && !state.pausedForQuiz) {
+        if (state.nearbyBook) {
+          startQuiz(state.nearbyBook);
+          keys.delete("Space");
+        } else if (state.nearbyClassmate) {
+          startClassmateDialog(state.nearbyClassmate);
+          keys.delete("Space");
+        }
+      }
+
+      moveTeacher(dt);
+      checkBooks();
+      checkClassmates();
+      checkEndings();
+      updateHud();
+    }
+
+    function movePlayer(dx, dy) {
+      const radius = 0.12;
+      const nextX = state.player.x + dx;
+      const nextY = state.player.y + dy;
+      if (canStand(nextX, state.player.y, radius, true)) state.player.x = nextX;
+      if (canStand(state.player.x, nextY, radius, true)) state.player.y = nextY;
+    }
+
+    function moveTeacher(dt) {
+      const angry = state.noise > 0;
+      const target = angry ? state.player : currentPatrolTarget();
+      const path = nextPathStep(state.teacher, target);
+      let tx = target.x;
+      let ty = target.y;
+      if (path) {
+        tx = path.x + 0.5;
+        ty = path.y + 0.5;
+      } else {
+        return;
+      }
+      const dx = tx - state.teacher.x;
+      const dy = ty - state.teacher.y;
+      const distanceToTarget = Math.hypot(dx, dy) || 1;
+      const speed = (angry ? state.teacher.speed + solvedCount() * 0.13 + state.noise * 0.018 : 0.62) * dt;
+      const nx = (dx / distanceToTarget) * speed;
+      const ny = (dy / distanceToTarget) * speed;
+      state.teacher.angle = Math.atan2(dy, dx);
+      if (canStand(state.teacher.x + nx, state.teacher.y, 0.14, false)) state.teacher.x += nx;
+      if (canStand(state.teacher.x, state.teacher.y + ny, 0.14, false)) state.teacher.y += ny;
+      if (!angry && dist(state.teacher.x, state.teacher.y, target.x, target.y) < 0.42) {
+        state.teacher.patrolIndex = (state.teacher.patrolIndex + 1) % patrolPoints.length;
+      }
+    }
+
+    function currentPatrolTarget() {
+      return patrolPoints[state.teacher.patrolIndex % patrolPoints.length];
+    }
+
+    function nextPathStep(from, to) {
+      const start = { x: Math.floor(from.x), y: Math.floor(from.y) };
+      const goal = { x: Math.floor(to.x), y: Math.floor(to.y) };
+      const queue = [start];
+      const came = new Map([[`${start.x},${start.y}`, null]]);
+      const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+      while (queue.length) {
+        const current = queue.shift();
+        if (current.x === goal.x && current.y === goal.y) break;
+        for (const [dx, dy] of dirs) {
+          const next = { x: current.x + dx, y: current.y + dy };
+          const key = `${next.x},${next.y}`;
+          if (came.has(key) || !walkable(next.x + 0.5, next.y + 0.5, false)) continue;
+          came.set(key, current);
+          queue.push(next);
+        }
+      }
+
+      let current = goal;
+      let previous = came.get(`${current.x},${current.y}`);
+      if (!previous) return null;
+      while (previous && !(previous.x === start.x && previous.y === start.y)) {
+        current = previous;
+        previous = came.get(`${current.x},${current.y}`);
+      }
+      return current;
+    }
+
+    function checkBooks() {
+      state.nearbyBook = null;
+      for (const book of state.books) {
+        if (!book.solved && dist(state.player.x, state.player.y, book.x, book.y) < 0.62) {
+          state.nearbyBook = book;
+          break;
+        }
+      }
+    }
+
+    function checkClassmates() {
+      state.nearbyClassmate = null;
+      for (const classmate of state.classmates) {
+        if (!classmate.talked && dist(state.player.x, state.player.y, classmate.x, classmate.y) < 0.62) {
+          state.nearbyClassmate = classmate;
+          break;
+        }
+      }
+    }
+
+    function checkEndings() {
+      if (state.noise > 0 && dist(state.player.x, state.player.y, state.teacher.x, state.teacher.y) < 0.52) {
+        lose();
+      }
+      if (solvedCount() === totalBooks && tileAt(state.player.x, state.player.y) === "E") {
+        win();
+      }
+    }
+
+    function updateHud() {
+      booksEl.textContent = `${solvedCount()}/${totalBooks}`;
+      noiseEl.textContent = `${Math.round(state.noise)}%`;
+      roomEl.textContent = currentRoom();
+    }
+
+    function startQuiz(book) {
+      state.activeBook = book;
+      state.pausedForQuiz = true;
+      
+      // Get 1 unique question for this book
+      const questionIdx = book.id % englishQuestions.length;
+      const task = englishQuestions[questionIdx];
+      
+      state.currentQuestions = [task];
+      state.currentAnswers = [];
+      state.solvedQuestionsCount = 0;
+      
+      // Display question directly
+      question.textContent = task.q;
+      question.style.display = "block";
+      const answerRow = document.querySelector(".answer-row");
+      answerRow.style.display = "flex";
+      answer.value = "";
+      answer.dataset.questionIdx = 0;
+      
+      // Hide the questions list since we only have 1 question
+      questionsList.innerHTML = '';
+      
+      quiz.classList.remove("is-hidden");
+      answer.focus();
+    }
+    
+    function showQuestionForm(task, questionIdx, element) {
+      // Remove previous selection
+      document.querySelectorAll('.question-item').forEach(el => {
+        el.style.background = 'rgba(0,0,0,0.15)';
+        el.style.borderColor = 'transparent';
+      });
+      
+      // Highlight selected question
+      element.style.background = 'rgba(255, 211, 92, 0.2)';
+      element.style.borderColor = '#ffd35c';
+      
+      question.textContent = task.q;
+      question.style.display = "block";
+      const answerRow = document.querySelector(".answer-row");
+      answerRow.style.display = "flex";
+      answer.value = "";
+      answer.dataset.questionIdx = questionIdx;
+      answer.focus();
+    }
+
+    function startClassmateDialog(classmate) {
+      state.activeClassmate = classmate;
+      state.pausedForQuiz = true;
+      const randomSpeech = classmateSpeech[Math.floor(Math.random() * classmateSpeech.length)];
+      
+      // Create a simple dialog for classmate
+      questionsList.innerHTML = `<div style="padding: 16px; text-align: center; font-size: 18px; font-style: italic;">«${randomSpeech}»</div>`;
+      
+      // Create close button
+      quizForm.querySelector(".answer-row").style.display = "flex";
+      quizForm.querySelector(".answer-row input").style.display = "none";
+      const submitBtn = quizForm.querySelector(".primary[type='submit']");
+      submitBtn.textContent = "ОК";
+      submitBtn.style.display = "block";
+      submitBtn.dataset.isClassmate = "true";
+      
+      quiz.classList.remove("is-hidden");
+      setTimeout(() => submitBtn.focus(), 50);
+    }
+
+    function submitQuiz(event) {
+      event.preventDefault();
+      
+      // Если это диалог с одноклассником, просто закрыть
+      if (state.activeClassmate) {
+        state.activeClassmate.talked = true;
+        tone(420, 0.08, "sine", 0.03);
+        closeQuiz();
+        return;
+      }
+      
+      const questionIdx = parseInt(answer.dataset.questionIdx);
+      const task = state.currentQuestions[questionIdx];
+      const value = normalizeAnswer(answer.value);
+      const correctAnswers = task.answers.map(a => normalizeAnswer(a));
+      
+      if (correctAnswers.includes(value)) {
+        // Correct answer - mark book as solved
+        state.activeBook.solved = true;
+        state.noise = Math.max(0, state.noise - 9);
+        tone(720, 0.08, "sine", 0.04);
+        setTimeout(() => closeQuiz(), 400);
+      } else {
+        state.noise = Math.min(100, state.noise + 28);
+        quizNotice.textContent = "Неправильный ответ";
+        answer.value = "";
+        tone(120, 0.16, "sawtooth", 0.05);
+      }
+      updateHud();
+    }
+
+    function normalizeAnswer(value) {
+      return String(value).trim().toLowerCase().replace(/[.!?,]/g, "");
+    }
+
+    function closeQuiz() {
+      state.pausedForQuiz = false;
+      state.activeBook = null;
+      state.activeClassmate = null;
+      state.currentQuestions = [];
+      state.solvedQuestionsCount = 0;
+      question.style.display = "none";
+      const answerRow = document.querySelector(".answer-row");
+      answerRow.style.display = "none";
+      const answerInput = answerRow.querySelector("input");
+      if (answerInput) answerInput.style.display = "block";
+      const submitBtn = answerRow.querySelector(".primary[type='submit']");
+      if (submitBtn) submitBtn.textContent = "Проверить";
+      answer.value = "";
+      quizNotice.textContent = "";
+      quiz.classList.add("is-hidden");
+      state.lastTime = performance.now();
+    }
+
+    function lose() {
+      state.running = false;
+      message.textContent = "Учитель стал злым и догнал тебя. Попробуй снова: отвечай по английскому без ошибок.";
+      startButton.textContent = "Заново";
+      overlay.classList.remove("is-hidden");
+      tone(90, 0.22, "sawtooth", 0.05);
+    }
+
+    function win() {
+      state.running = false;
+      message.textContent = "Ты собрал все тетради, прошел английские задания и выбрался из школы.";
+      startButton.textContent = "Еще раз";
+      overlay.classList.remove("is-hidden");
+      tone(880, 0.12, "triangle", 0.05);
+    }
+
+    function draw() {
+      const w = viewWidth();
+      const h = viewHeight();
+      ctx.clearRect(0, 0, w, h);
+      drawCeilingAndFloor(w, h);
+      castWalls(w, h);
+      drawSprites(w, h);
+      drawReticle(w, h);
+      drawMiniMap(w, h);
+    }
+
+    function drawCeilingAndFloor(w, h) {
+      const ceilingTexture = textures.ceiling && ctx.createPattern(textures.ceiling, "repeat");
+      ctx.fillStyle = ceilingTexture || "#ded9bd";
+      ctx.fillRect(0, 0, w, h / 2);
+
+      const floorTexture = textures.floor && ctx.createPattern(textures.floor, "repeat");
+      ctx.fillStyle = floorTexture || "#8d7044";
+      ctx.fillRect(0, h / 2, w, h / 2);
+
+      ctx.strokeStyle = "rgba(255,255,255,0.06)";
+      for (let y = h / 2 + 20; y < h; y += 32) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y + (y - h / 2) * 0.28);
+        ctx.stroke();
+      }
+    }
+
+    function castWalls(w, h) {
+      const columns = Math.max(90, Math.floor(w / 5));
+      state.zBuffer = new Array(columns);
+      for (let col = 0; col < columns; col += 1) {
+        const rayAngle = state.player.angle - fov / 2 + (col / columns) * fov;
+        const hit = castRay(rayAngle);
+        const corrected = hit.distance * Math.cos(rayAngle - state.player.angle);
+        const wallHeight = Math.min(h * 2, h / Math.max(0.08, corrected));
+        const x = (col / columns) * w;
+        const sliceW = Math.ceil(w / columns) + 1;
+        const top = h / 2 - wallHeight / 2;
+        const shade = clamp(1 - corrected / maxDepth, 0.12, 1);
+        const texture = wallTexture(hit.tile);
+        if (texture) {
+          const sx = Math.floor(hit.offset * texture.width);
+          ctx.globalAlpha = 0.72 + shade * 0.28;
+          ctx.drawImage(texture, sx, 0, 1, texture.height, x, top, sliceW, wallHeight);
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = `rgba(0,0,0,${clamp(1 - shade, 0, 0.62)})`;
+          ctx.fillRect(x, top, sliceW, wallHeight);
+        } else {
+          ctx.fillStyle = wallColor(hit.tile, shade, hit.side);
+          ctx.fillRect(x, top, sliceW, wallHeight);
+        }
+
+        if (hit.tile === "D") {
+          ctx.fillStyle = `rgba(75, 46, 28, ${0.36 + shade * 0.32})`;
+          ctx.fillRect(x + sliceW * 0.2, top + wallHeight * 0.1, Math.max(1, sliceW * 0.25), wallHeight * 0.78);
+        }
+
+        if (hit.tile === "E") {
+          ctx.fillStyle = `rgba(118, 227, 106, ${0.35 + shade * 0.42})`;
+          ctx.fillRect(x, top, sliceW, wallHeight);
+        }
+
+        state.zBuffer[col] = corrected;
+      }
+    }
+
+    function castRay(angle) {
+      const sin = Math.sin(angle);
+      const cos = Math.cos(angle);
+      let distance = 0;
+      let lastX = state.player.x;
+      let lastY = state.player.y;
+      while (distance < maxDepth) {
+        distance += 0.025;
+        const x = state.player.x + cos * distance;
+        const y = state.player.y + sin * distance;
+        const tile = tileAt(x, y);
+        if (tile === "#" || tile === "E") {
+          const side = Math.abs(Math.floor(x) - Math.floor(lastX)) > Math.abs(Math.floor(y) - Math.floor(lastY));
+          const offset = side ? y - Math.floor(y) : x - Math.floor(x);
+          return { distance, tile, side, offset };
+        }
+        lastX = x;
+        lastY = y;
+      }
+      return { distance: maxDepth, tile: "#", side: false, offset: 0 };
+    }
+
+    function drawSprites(w, h) {
+      const sprites = [];
+      for (const prop of schoolProps) {
+        sprites.push({ ...prop, size: propSize(prop.type) });
+      }
+      for (const classmate of classmates) {
+        sprites.push(classmate);
+      }
+      for (const book of state.books) {
+        if (!book.solved) sprites.push({ ...book, type: "book", size: 0.48 });
+      }
+      sprites.push({ x: state.teacher.x, y: state.teacher.y, type: "teacher", size: 0.82 });
+
+      sprites.sort((a, b) => dist(state.player.x, state.player.y, b.x, b.y) - dist(state.player.x, state.player.y, a.x, a.y));
+      for (const sprite of sprites) drawSprite(sprite, w, h);
+    }
+
+    function drawSprite(sprite, w, h) {
+      const dx = sprite.x - state.player.x;
+      const dy = sprite.y - state.player.y;
+      const distance = Math.hypot(dx, dy);
+      let angle = Math.atan2(dy, dx) - state.player.angle;
+      angle = Math.atan2(Math.sin(angle), Math.cos(angle));
+      if (Math.abs(angle) > fov * 0.72 || distance < 0.12) return;
+
+      const screenX = (0.5 + angle / fov) * w;
+      const size = Math.min(h * 1.4, (h / distance) * sprite.size);
+      const y = h / 2 + size * 0.08;
+      const column = Math.floor((screenX / w) * state.zBuffer.length);
+      if (state.zBuffer[column] && distance > state.zBuffer[column] + 0.15) return;
+
+      if (sprite.type === "book") {
+        drawBookSprite(screenX, y, size);
+      } else if (sprite.type === "teacher") {
+        drawTeacherSprite(screenX, y, size);
+      } else if (sprite.type === "classmate") {
+        drawClassmateSprite(screenX, y, size);
+      } else {
+        drawSchoolProp(screenX, y, size, sprite.type);
+      }
+    }
+
+    function propSize(type) {
+      if (type === "board") return 0.85;
+      if (type === "classmate") return 0.72;
+      if (type === "locker") return 0.7;
+      if (type === "shelf") return 0.72;
+      if (type === "chair") return 0.4;
+      if (type === "bench") return 0.62;
+      if (type === "table") return 0.68;
+      return 0.58;
+    }
+
+    function drawBookSprite(x, y, size) {
+      if (drawTextureSprite(textures.notebook, x, y - size * 0.12, size * 0.62, size * 0.82)) return;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = "#68c7ff";
+      roundRect(-size * 0.28, -size * 0.5, size * 0.56, size * 0.74, Math.max(3, size * 0.05));
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.fillRect(-size * 0.16, -size * 0.3, size * 0.32, Math.max(2, size * 0.04));
+      ctx.fillRect(-size * 0.16, -size * 0.14, size * 0.24, Math.max(2, size * 0.04));
+      ctx.restore();
+    }
+
+    function drawTeacherSprite(x, y, size) {
+      const teacherImage = state.noise > 0 ? textures.teacherAngry : textures.teacherGood;
+      if (drawTextureSprite(teacherImage, x, y - size * 0.1, size * 0.72, size * 1.04)) return;
+      ctx.save();
+      ctx.translate(x, y);
+      const angry = clamp(state.noise / 100, 0, 1);
+      ctx.fillStyle = angry > 0 ? `rgb(${Math.round(255)}, ${Math.round(176 - angry * 86)}, ${Math.round(74 - angry * 36)})` : "#ffd35c";
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.38, size * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = angry > 0 ? "#ff5b5b" : "#6ed36b";
+      roundRect(-size * 0.22, -size * 0.18, size * 0.44, size * 0.62, Math.max(4, size * 0.06));
+      ctx.fill();
+      ctx.strokeStyle = "#2a1010";
+      ctx.lineWidth = Math.max(2, size * 0.04);
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.08, -size * 0.42);
+      ctx.lineTo(-size * 0.03, -size * 0.39);
+      ctx.moveTo(size * 0.08, -size * 0.42);
+      ctx.lineTo(size * 0.03, -size * 0.39);
+      if (angry > 0) {
+        ctx.moveTo(-size * 0.08, -size * 0.3);
+        ctx.lineTo(size * 0.08, -size * 0.3);
+      } else {
+        ctx.arc(0, -size * 0.33, size * 0.09, 0.1, Math.PI - 0.1);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawClassmateSprite(x, y, size) {
+      if (drawTextureSprite(textures.classmate, x, y - size * 0.28, size * 0.9, size * 0.9)) return;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = "#f8f1dc";
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.34, size * 0.22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#385fbd";
+      roundRect(-size * 0.23, -size * 0.1, size * 0.46, size * 0.42, Math.max(3, size * 0.05));
+      ctx.fill();
+      ctx.strokeStyle = "#111";
+      ctx.lineWidth = Math.max(2, size * 0.035);
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.08, -size * 0.38);
+      ctx.lineTo(-size * 0.02, -size * 0.36);
+      ctx.moveTo(size * 0.08, -size * 0.38);
+      ctx.lineTo(size * 0.02, -size * 0.36);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawSchoolProp(x, y, size, type) {
+      const propTexture = textures[type] || (type === "bench" ? textures.chair : null) || (type === "table" ? textures.desk : null);
+      if (drawTextureSprite(propTexture, x, y, size * 0.95, size * 0.82)) return;
+      ctx.save();
+      ctx.translate(x, y);
+      if (type === "board") {
+        ctx.fillStyle = "#244f3b";
+        roundRect(-size * 0.45, -size * 0.42, size * 0.9, size * 0.5, Math.max(3, size * 0.04));
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.55)";
+        ctx.lineWidth = Math.max(2, size * 0.025);
+        ctx.strokeRect(-size * 0.36, -size * 0.32, size * 0.72, size * 0.3);
+      } else if (type === "locker") {
+        ctx.fillStyle = "#4c6770";
+        roundRect(-size * 0.25, -size * 0.58, size * 0.5, size * 0.82, Math.max(3, size * 0.04));
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,0.22)";
+        ctx.fillRect(-size * 0.15, -size * 0.42, size * 0.3, size * 0.04);
+        ctx.fillRect(-size * 0.15, -size * 0.16, size * 0.3, size * 0.04);
+      } else if (type === "shelf") {
+        ctx.fillStyle = "#8b6034";
+        roundRect(-size * 0.36, -size * 0.5, size * 0.72, size * 0.72, Math.max(3, size * 0.04));
+        ctx.fill();
+        ctx.fillStyle = "#d6b36a";
+        ctx.fillRect(-size * 0.28, -size * 0.34, size * 0.56, size * 0.05);
+        ctx.fillRect(-size * 0.28, -size * 0.11, size * 0.56, size * 0.05);
+      } else {
+        ctx.fillStyle = type === "bench" ? "#9b7041" : "#7e5832";
+        roundRect(-size * 0.42, -size * 0.22, size * 0.84, size * 0.3, Math.max(3, size * 0.04));
+        ctx.fill();
+        ctx.fillStyle = "rgba(32,18,10,0.85)";
+        ctx.fillRect(-size * 0.32, size * 0.08, size * 0.08, size * 0.26);
+        ctx.fillRect(size * 0.24, size * 0.08, size * 0.08, size * 0.26);
+      }
+      ctx.restore();
+    }
+
+    function drawTextureSprite(image, x, y, width, height) {
+      if (!image) return false;
+      ctx.drawImage(image, x - width / 2, y - height / 2, width, height);
+      return true;
+    }
+
+    function drawReticle(w, h) {
+      ctx.strokeStyle = "rgba(248,241,220,0.5)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w / 2 - 8, h / 2);
+      ctx.lineTo(w / 2 + 8, h / 2);
+      ctx.moveTo(w / 2, h / 2 - 8);
+      ctx.lineTo(w / 2, h / 2 + 8);
+      ctx.stroke();
+    }
+
+    function drawMiniMap(w, h) {
+      const scale = Math.min(7, w / 150);
+      const left = 14;
+      const top = 14;
+      ctx.save();
+      ctx.globalAlpha = 0.86;
+      ctx.fillStyle = "rgba(0,0,0,0.42)";
+      roundRect(left - 6, top - 6, map[0].length * scale + 12, map.length * scale + 12, 8);
+      ctx.fill();
+      for (let y = 0; y < map.length; y += 1) {
+        for (let x = 0; x < map[y].length; x += 1) {
+          const t = map[y][x];
+          ctx.fillStyle = t === "#" ? "#3f484d" : t === "D" ? "#6b4a2d" : t === "E" ? "#76e36a" : "#d1bb82";
+          ctx.fillRect(left + x * scale, top + y * scale, scale, scale);
+        }
+      }
+      ctx.fillStyle = "#3d7cff";
+      ctx.fillRect(left + state.player.x * scale - 2, top + state.player.y * scale - 2, 4, 4);
+      ctx.fillStyle = "#ff5b5b";
+      ctx.fillRect(left + state.teacher.x * scale - 2, top + state.teacher.y * scale - 2, 4, 4);
+      ctx.restore();
+    }
+
+    function drawHint(w, h) {
+      // Hints removed for cleaner UI
+    }
+
+    function wallColor(tile, shade, side) {
+      const s = side ? shade * 0.82 : shade;
+      if (tile === "D") return rgb(106 * s, 72 * s, 38 * s);
+      if (tile === "E") return rgb(56 * s, 130 * s, 55 * s);
+      return rgb(154 * s, 166 * s, 164 * s);
+    }
+
+    function wallTexture(tile) {
+      if (tile === "D") return textures.door;
+      if (tile === "E") return textures.exit;
+      return textures.wall;
+    }
+
+    function tileAt(x, y) {
+      const mx = Math.floor(x);
+      const my = Math.floor(y);
+      if (!map[my] || !map[my][mx]) return "#";
+      return map[my][mx];
+    }
+
+    function walkable(x, y, allowExit = solvedCount() === totalBooks) {
+      const tile = tileAt(x, y);
+      return tile !== "#" && (tile !== "E" || allowExit);
+    }
+
+    function canStand(x, y, radius, allowExit) {
+      return walkable(x - radius, y - radius, allowExit) &&
+        walkable(x + radius, y - radius, allowExit) &&
+        walkable(x - radius, y + radius, allowExit) &&
+        walkable(x + radius, y + radius, allowExit);
+    }
+
+    function currentRoom() {
+      for (const room of rooms) {
+        if (state.player.x >= room.x1 && state.player.x <= room.x2 && state.player.y >= room.y1 && state.player.y <= room.y2) {
+          return room.name;
+        }
+      }
+      if (tileAt(state.player.x, state.player.y) === "E") return "Выход";
+      return "Коридор";
+    }
+
+    function solvedCount() {
+      return state.books.filter((book) => book.solved).length;
+    }
+
+    function dist(ax, ay, bx, by) {
+      return Math.hypot(ax - bx, ay - by);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function rgb(r, g, b) {
+      return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
+    }
+
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    let audioContext;
+    function tone(frequency, duration, type, volume) {
+      if (state.muted) return;
+      audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      gain.gain.value = volume;
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + duration);
+      oscillator.connect(gain).connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + duration);
+    }
+
+    window.addEventListener("keydown", (event) => {
+      keys.add(event.code);
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) {
+        event.preventDefault();
+      }
+    });
+    window.addEventListener("keyup", (event) => keys.delete(event.code));
+
+    document.querySelectorAll("[data-key]").forEach((button) => {
+      const code = button.dataset.key;
+      button.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        keys.add(code);
+      });
+      button.addEventListener("pointerup", () => keys.delete(code));
+      button.addEventListener("pointercancel", () => keys.delete(code));
+      button.addEventListener("pointerleave", () => keys.delete(code));
+    });
+
+    canvas.addEventListener("pointerdown", (event) => {
+      if (!state.running || state.pausedForQuiz) return;
+      canvas.focus();
+      canvas.setPointerCapture(event.pointerId);
+      canvas.dataset.dragging = "true";
+      canvas.dataset.lastX = String(event.clientX);
+      if (canvas.requestPointerLock) canvas.requestPointerLock();
+    });
+
+    canvas.addEventListener("pointermove", (event) => {
+      if (canvas.dataset.dragging !== "true" || !state.running || state.pausedForQuiz) return;
+      const lastX = Number(canvas.dataset.lastX || event.clientX);
+      state.player.angle += (event.clientX - lastX) * 0.006;
+      canvas.dataset.lastX = String(event.clientX);
+    });
+
+    canvas.addEventListener("pointerup", () => {
+      canvas.dataset.dragging = "false";
+    });
+
+    document.addEventListener("mousemove", (event) => {
+      if (document.pointerLockElement === canvas && state.running && !state.pausedForQuiz) {
+        state.player.angle += event.movementX * 0.0045;
+      }
+    });
+
+    startButton.addEventListener("click", resetGame);
+    muteButton.addEventListener("click", () => {
+      state.muted = !state.muted;
+      muteButton.textContent = state.muted ? "Звук: выкл" : "Звук: вкл";
+    });
+    quizForm.addEventListener("submit", submitQuiz);
+    window.addEventListener("resize", resize);
+
+    initializeQRCode();
+    loadTextures();
+    resize();
+  </script>
+</body>
+</html>
